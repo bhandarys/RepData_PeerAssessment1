@@ -1,20 +1,167 @@
-# Reproducible Research: Peer Assessment 1
+Peer Assessment 1
+========================================================
+
+Note - The template follows question pattern for ease of use.
+
+### Steps Required:
 
 
-## Loading and preprocessing the data
-
-
-
-## What is mean total number of steps taken per day?
-
-
-
-## What is the average daily activity pattern?
+#### Loading and preprocessing the data
 
 
 
-## Imputing missing values
+1.Load the data.
+
+```{r simulation, echo = TRUE}
+ds <- read.table("activity.csv", sep=",", header=TRUE)
+```
+
+*Description - ds is the data set. Here the csv file is assumed to be in the working folder. The columns are
+1.Steps
+2.Date
+3.Interval
+The column numbers are used in most of the code to avoid spelling errors*
 
 
 
-## Are there differences in activity patterns between weekdays and weekends?
+2.Process/transform the data (if necessary) into a format suitable for your analysis
+
+```{r}
+ds$date<-as.Date(ds$date)
+ds1<-ds[complete.cases(ds),]
+```
+
+*Description - ds1 now contains only required cases and with proper data types in all columns.*
+
+
+
+#### What is mean total number of steps taken per day?
+
+
+
+1.Make a histogram of the total number of steps taken each day
+
+```{r}
+plot(ds1[,2], ds1[,1], type="h", xlab="Dates", ylab="Number of Steps", lwd = 2, col = "brown")
+```
+
+
+
+2.Calculate and report the mean and median total number of steps taken per day
+
+```{r}
+library(plyr)
+ddply(ds1, ~date, summarise, Steps_Mean =mean(steps), Steps_Median = median(steps), Steps_Total = sum(steps))
+```
+
+
+
+#### What is the average daily activity pattern?
+
+
+
+1.Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+
+```{r}
+ds2<-aggregate(ds1[,1], by = list(ds1[,3]), FUN= "mean")
+```
+
+*description - ds2 contains aggregate data.*
+
+```{r}
+plot(ds2[,1], ds2[,2], type="l", xlab="Interval", ylab="Number of Steps", lwd = 1, col="blue")
+```
+
+
+
+2.Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+```{r}
+colnames(ds2) <- c("Interval", "Mean_Steps")
+ds2[which.max(ds2[,2]),]
+```
+
+
+
+#### Inputing missing values
+
+
+
+1.Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
+
+```{r}
+sprintf("There are %d rows with NAs in it.", nrow(ds) - nrow(ds1))
+```
+
+
+
+2.Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+
+```{r}
+ds3<-ds
+x<-which(is.na(ds3[,1])==TRUE)
+ds3[,1][x] <- 0
+```
+
+*Description - The missing value is now filled with 0s. As can be seen, this does not change the daily mean or daily median. However 8 new days are added.*
+
+
+
+3.Create a new dataset that is equal to the original dataset but with the missing data filled in.
+
+```{r}
+```
+
+*Description - ds3 is now equivalent to the original dataset but with missing values filled with 0.*
+
+
+
+4.Make a histogram of the total number of steps taken each day
+
+```{r}
+plot(ds3[,2], ds3[,1], type="h", xlab="Dates", ylab="Number of Steps", lwd = 2, col = "brown")
+```
+
+
+And Calculate and report the mean and median total number of steps taken per day.
+
+```{r}
+ddply(ds3, ~date, summarise, Steps_Mean =mean(steps), Steps_Median = median(steps), Steps_Total = sum(steps))
+
+```
+
+
+Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+
+```{r}
+sprintf("Removing NAs and adding 0s have no impact on the mean and median for each day. However we get 8 more records with 0 mean, which would mean that there were no recordings for 8 days in the given sample. Number of rows increase from 53 to 61")
+```
+
+
+
+#### Are there differences in activity patterns between weekdays and weekends?
+
+
+
+1.Create a new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
+
+```{r}
+dt <- data.frame(c("Weekend", "Weekday", "Weekday", "Weekday", "Weekday", "Weekday", "Weekend")[as.POSIXlt(ds3[,2])$wday + 1])
+colnames(dt) <- "Weekday"
+ds3<-cbind(ds3, dt)
+ds4<-aggregate(ds3[,1], by = list(ds3[,3], ds3[,4]), FUN= "mean")
+f <- factor(ds4[,2], labels = c("Weekday", "Weekend"))
+```
+
+*Description - I had to use POSIXlt$wday to avoid System.Locale issue that comes up with non-US locale. ds4 contains aggregate data & f contains factors*
+
+
+
+2.Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). The plot should look something like the following, which was creating using **simulated data**:
+
+```{r}
+library(lattice)
+xyplot(ds4[,3]~ds4[,1] | f, layout = c(1,2), type = "l", xlab = "Interval", ylab="Number of Steps")
+```
+
+**Thank you.**
